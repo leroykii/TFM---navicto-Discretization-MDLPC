@@ -13,8 +13,6 @@ def main():
     feature_names, class_names = dataset['feature_names'], dataset['target_names']
     numeric_features = np.arange(X.shape[1])  # all fetures in this dataset are numeric. These will be discretized
 
-    
-    
 
     #Split between training and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
