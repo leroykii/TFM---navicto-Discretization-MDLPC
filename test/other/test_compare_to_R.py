@@ -1,6 +1,10 @@
 import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+import os, sys
+
+p = os.path.abspath('.')
+sys.path.insert(1, p)
 from MDLP import MDLP_Discretizer
 
 def main():   
