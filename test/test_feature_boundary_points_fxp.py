@@ -6,8 +6,10 @@ p = os.path.abspath('.')
 sys.path.insert(1, p)
 from MDLP.MDLP_fxp import MDLP_Discretizer_fxp
 from MDLP.MDLP import MDLP_Discretizer
+from fxpmath import Fxp
 
 TEST_EPSILON = 1e-6
+FIXEDFORMAT = Fxp(None, signed=True, n_word=64, n_frac=32)    
 
 def test_feature_boundary_points_fxp():
 
@@ -37,6 +39,8 @@ def test_feature_boundary_points_fxp():
         6.5, 6.9, 6.3, 5.1, 4.9, 6.6, 5.1, 4.6, 6. , 7.9, 4.6, 5.8, 6.1,
         6.7, 5.4, 6. , 5.5, 5. , 6.5, 7.6, 4.9, 5.5])
 
+    input_values_fxp = Fxp(input_values).like(FIXEDFORMAT)
+
     class_values = np.array([0, 0, 1, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 2, 1, 0, 1, 0, 0, 0, 2, 1,
             0, 0, 0, 1, 2, 2, 2, 1, 0, 0, 1, 1, 1, 0, 2, 1, 1, 1, 2, 2, 0, 2,
             0, 0, 0, 1, 0, 1, 1, 1, 1, 2, 0, 1, 0, 2, 0, 1, 0, 1, 2, 0, 1, 0,
@@ -49,9 +53,11 @@ def test_feature_boundary_points_fxp():
     discretizer_fxp._class_labels = class_values
     discretizer._class_labels = class_values
 
-    boundary_points_fxp = discretizer_fxp.feature_boundary_points_fxp(input_values)
+    ####### TEST
+    boundary_points_fxp = discretizer_fxp.feature_boundary_points_fxp(input_values_fxp)
     boundary_points = discretizer.feature_boundary_points(input_values)
 
+    ####### CHECK ERRORS
     error_array = boundary_points_fxp.get_val() - boundary_points
     error = np.abs(error_array.mean())
 
