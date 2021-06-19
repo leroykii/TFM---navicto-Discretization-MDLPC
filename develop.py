@@ -20,13 +20,14 @@ def main():
 
 
     # Split between training and test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state = 123)
 
     print(X)
 
     #Initialize discretizer object and fit to training data
     discretizer = MDLP_Discretizer_fxp(features=numeric_features)
-    discretizer.fit(X_train, y_train)
+    # discretizer.fit(X_train, y_train)
+    discretizer.fit(X, y)
     X_train_discretized = discretizer.transform(X_train)
 
     #apply same discretization to test set
@@ -36,18 +37,20 @@ def main():
 
     print(type(X))
     print(X.shape)
+   # print ("Interval cut-points: %s" % str(discretizer._cuts[0]))
+#    print ("Bin descriptions: %s" % str(discretizer._bin_descriptions[0]))
     
-    X_col1 = X[:, [0]]
-    discretizer2 = MDLP_Discretizer_fxp(features=[0])
-    discretizer2.fit(X_col1, y)
+    # X_col1 = X[:, [0]]
+    # discretizer2 = MDLP_Discretizer_fxp(features=[0])
+    # discretizer2.fit(X_col1, y)
 
-    X_col1_disc = discretizer2.transform(X_col1)
-    print(X_col1)
-    print(X_col1_disc+1)
-    print ("Interval cut-points: %s" % str(discretizer2._cuts[0]))
-    print ("Bin descriptions: %s" % str(discretizer2._bin_descriptions[0]))
+    # X_col1_disc = discretizer2.transform(X_col1)
+    # print(X_col1)
+    # print(X_col1_disc+1)
+    # print ("Interval cut-points: %s" % str(discretizer2._cuts[0]))
+    # print ("Bin descriptions: %s" % str(discretizer2._bin_descriptions[0]))
 
-    exit()
+    # exit()
 
     print(feature_names)
     print(class_names)
@@ -56,13 +59,16 @@ def main():
     #print ("Original dataset:\n%s" % str(X_train[0:5]))
     #print ("Discretized dataset:\n%s" % str(X_train_discretized[0:5]))
 
-    print ("Original dataset:\n%s" % str(X[0:15]))
-    print ("Discretized dataset:\n%s" % str(X_discretized[0:15]))
+    print ("Original dataset:\n%s" % str(X[0:10]))
+    print ("Discretized dataset:\n%s" % str(X_discretized[0:10]))
 
     #see how feature 0 was discretized
     print ("Feature: %s" % feature_names[0])
     print ("Interval cut-points: %s" % str(discretizer._cuts[0]))
-    print ("Bin descriptions: %s" % str(discretizer._bin_descriptions[0]))
+    print ("Interval cut-points: %s" % str(discretizer._cuts[1]))
+    print ("Interval cut-points: %s" % str(discretizer._cuts[2]))
+    print ("Interval cut-points: %s" % str(discretizer._cuts[3]))
+    #print ("Bin descriptions: %s" % str(discretizer._bin_descriptions[0]))
 
 if __name__ == '__main__':
     main()

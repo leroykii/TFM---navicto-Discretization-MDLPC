@@ -2,7 +2,7 @@ from __future__ import division
 from re import TEMPLATE
 __author__ = 'Victor Ruiz, vmr11@pitt.edu'
 import numpy as np
-from Entropy import entropy_numpy, cut_point_information_gain_numpy, cut_point_information_gain_numpy_fxp
+from Entropy import entropy_numpy, entropy_numpy_fxp, cut_point_information_gain_numpy, cut_point_information_gain_numpy_fxp
 from math import log
 from sklearn.base import TransformerMixin
 from sklearn import datasets
@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from fxpmath import Fxp
 
 
-FIXEDFORMAT = Fxp(None, signed=True, n_word=16, n_frac=8)    
+FIXEDFORMAT = Fxp(None, signed=True, n_word=64, n_frac=32)    
 
 
 def previous_item(a, val):
@@ -58,6 +58,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
 
     def fit(self, X, y):
         self._data_raw = X  # copy of original input data || <class 'numpy.ndarray'> float64
+        #TODO change self._data_raw to fixedpoint
         self._class_labels = y.reshape(-1, 1)  # make sure class labels is a column vector || <class 'numpy.ndarray'> int32
         self._classes = np.unique(self._class_labels) # <class 'numpy.ndarray'> int32
 
@@ -67,7 +68,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
 
         # initialize feature bins cut points
 
-        self._cuts = {f: [] for f in self._col_idx} # <class 'dict'>
+        self._cuts = {f: [] for f in self._col_idx} # <class 'dict'>      # TODO change name to _fxp
 
         # pre-compute all boundary points in dataset
         #self._boundaries = self.compute_boundary_points_all_features() # <class 'numpy.ndarray'> float64
@@ -126,7 +127,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         # else:
         #     return False
 
-    def MDLPC_criterion_fxp(self, X, y, feature_idx, cut_point):
+    def MDLPC_criterion_fxp(self, X_fxp, y, feature_idx, cut_point_fxp):
         '''
         Determines whether a partition is accepted according to the MDLPC criterion
         :param feature: feature of interest
@@ -134,26 +135,36 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :param partition_index: index of the sample (dataframe partition) in the interval of interest
         :return: True/False, whether to accept the partition
         '''
-        #get dataframe only with desired attribute and class columns, and split by cut_point
-        left_mask = X <= cut_point
-        right_mask = X > cut_point
 
-        #compute information gain obtained when splitting data at cut_point
-        cut_point_gain = cut_point_information_gain_numpy(X, y, cut_point)
+        #get dataframe only with desired attribute and class columns, and split by cut_point
+        left_mask = (X_fxp <= cut_point_fxp) == 1
+        right_mask = (X_fxp > cut_point_fxp) == 1
+
+        #compute information gain obtained when splitting data at cut_point   
+        cut_point_gain_fxp = cut_point_information_gain_numpy_fxp(X_fxp, y, cut_point_fxp)
+
         #compute delta term in MDLPC criterion
-        N = len(X) # number of examples in current partition
-        partition_entropy = entropy_numpy(y)
+        N = len(X_fxp) # number of examples in current partition
+        partition_entropy_fxp = entropy_numpy_fxp(y)
         k = len(np.unique(y))
         k_left = len(np.unique(y[left_mask]))
         k_right = len(np.unique(y[right_mask]))
-        entropy_left = entropy_numpy(y[left_mask])  # entropy of partition
-        entropy_right = entropy_numpy(y[right_mask])
-        delta = log(3 ** k, 2) - (k * partition_entropy) + (k_left * entropy_left) + (k_right * entropy_right)
+        entropy_left_fxp = entropy_numpy_fxp(y[left_mask])  # entropy of partition
+        entropy_right_fxp = entropy_numpy_fxp(y[right_mask])
+        
+        # Compute delta
+        entropy_left_and_right_fpx = Fxp((k_left * entropy_left_fxp) + (k_right * entropy_right_fxp)).like(FIXEDFORMAT)
+        entropy_all_contribution_fpx = Fxp( - (k * partition_entropy_fxp) + entropy_left_and_right_fpx).like(FIXEDFORMAT)
+        log_delta_fxp = Fxp(log(3 ** k, 2)).like(FIXEDFORMAT)   # TODO LOG PENDIENTE
+        delta = Fxp(log_delta_fxp + entropy_all_contribution_fpx).like(FIXEDFORMAT)
 
         #to split or not to split
-        gain_threshold = (log(N - 1, 2) + delta) / N
 
-        if cut_point_gain > gain_threshold:
+        log_gain_threshold_fxp = Fxp(log(N - 1, 2)).like(FIXEDFORMAT)   # TODO LOG PENDIENTE
+        gain_threshold_sum = Fxp(log_gain_threshold_fxp + delta).like(FIXEDFORMAT)
+        gain_threshold_fxp = Fxp(gain_threshold_sum / N).like(FIXEDFORMAT)
+
+        if cut_point_gain_fxp > gain_threshold_fxp:
             return True
         else:
             return False
@@ -311,7 +322,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         return gain_fxp[0][0] # return cut point
 
        
-    def single_feature_accepted_cutpoints_fxp(self, X, y, feature_idx):
+    def single_feature_accepted_cutpoints_fxp(self, X_fxp, y, feature_idx):
         '''
         Computes the cuts for binning a feature according to the MDLP criterion
         :param feature: attribute of interest
@@ -324,7 +335,6 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         # mask = np.isnan(X)
         # X = X[~mask]
         # y = y[~mask]
-        X_fxp = Fxp(X).like(FIXEDFORMAT)  # TODO
         
         # stop if constant or null feature values
         if len(np.unique(X_fxp)) < 2:
@@ -337,47 +347,37 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         cut_candidate = cut_candidate_fxp.get_val() # TODO remove conversion
         print(cut_candidate) # TODO remove print
         # decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate_fxp)  # TODO
-        decision = self.MDLPC_criterion_fxp(X, y, feature_idx, cut_candidate)  # TODO
 
-        # TODO should be the output from the previous function
-        #cut_candidate_fxp = Fxp(cut_candidate).like(FIXEDFORMAT)
-
-        # partition masks
-        left_mask = (X <= cut_candidate_fxp) == 1
-        right_mask = (X > cut_candidate_fxp) == 1
+        decision = self.MDLPC_criterion_fxp(X_fxp, y, feature_idx, cut_candidate_fxp)  # TODO
 
         # apply decision
         if not decision:
             return  # if partition wasn't accepted, there's nothing else to do
         if decision:
+            # partition masks
+            left_mask = (X_fxp <= cut_candidate_fxp) == 1
+            right_mask = (X_fxp > cut_candidate_fxp) == 1
+
             #now we have two new partitions that need to be examined
-            left_partition = X[left_mask] # TODO solo es una máscara ya debería quedar con el formato correcto
-            right_partition = X[right_mask]
-            if (left_partition.size == 0) or (right_partition.size == 0):
-                return #extreme point selected, don't partition
-            self._cuts[feature_idx] += [cut_candidate]  # accept partition
-            self.single_feature_accepted_cutpoints_fxp(left_partition, y[left_mask], feature_idx)
-            self.single_feature_accepted_cutpoints_fxp(right_partition, y[right_mask], feature_idx)
+            left_partition_fxp = X_fxp[left_mask] 
+            right_partition_fxp = X_fxp[right_mask]
+            if (left_partition_fxp.size == 0) or (right_partition_fxp.size == 0):
+                return # extreme point selected, don't partition
+            self._cuts[feature_idx] += [cut_candidate_fxp]  # accept partition
+            self.single_feature_accepted_cutpoints_fxp(left_partition_fxp, y[left_mask], feature_idx)
+            self.single_feature_accepted_cutpoints_fxp(right_partition_fxp, y[right_mask], feature_idx)
             # order cutpoints in ascending order
             self._cuts[feature_idx] = sorted(self._cuts[feature_idx])
             return
 
-    def all_features_accepted_cutpoints(self):
-        '''
-        Computes cut points for all numeric features (the ones in self._features)
-        :return:
-        '''
-        for attr in self._col_idx:
-            self.single_feature_accepted_cutpoints(X=self._data_raw[:, attr], y=self._class_labels, feature_idx=attr)
-        return
-    
     def all_features_accepted_cutpoints_fxp(self):
         '''
         Computes cut points for all numeric features (the ones in self._features)
         :return:
         '''
         for attr in self._col_idx:
-            self.single_feature_accepted_cutpoints_fxp(X=self._data_raw[:, attr], y=self._class_labels, feature_idx=attr)
+            X_fxp = Fxp(self._data_raw[:, attr]).like(FIXEDFORMAT)   # TODO remove conversion
+            self.single_feature_accepted_cutpoints_fxp(X_fxp=X_fxp, y=self._class_labels, feature_idx=attr)
         return
 
     def generate_bin_descriptions(self):
