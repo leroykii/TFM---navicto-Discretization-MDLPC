@@ -74,7 +74,7 @@ def entropy_numpy_fxp(data_classes, base=2):
     
     return ent_fxp
 
-def cut_point_information_gain_numpy_fxp(X, y, cut_point):
+def cut_point_information_gain_numpy_fxp(X_fxp, y, cut_point_fxp):
     '''
     Return de information gain obtained by splitting a numeric attribute in two according to cut_point
     :param dataset: pandas dataframe with a column for attribute values and a column for class
@@ -88,11 +88,8 @@ def cut_point_information_gain_numpy_fxp(X, y, cut_point):
 
     entropy_full_fxp = entropy_numpy_fxp(y)
 
-    X_fxp = Fxp(X).like(FIXEDFORMAT) # TODO quitar conversion
-    cut_point_fxp = Fxp(cut_point).like(FIXEDFORMAT) # TODO quitar conversion
-
-    data_left_mask = (X <= cut_point_fxp) == 1
-    data_right_mask = (X > cut_point_fxp) == 1
+    data_left_mask = (X_fxp <= cut_point_fxp) == 1
+    data_right_mask = (X_fxp > cut_point_fxp) == 1
     (N, N_left, N_right) = (len(X_fxp), data_left_mask.sum(), data_right_mask.sum())
 
     entropy_left_fxp = entropy_numpy_fxp(y[data_left_mask])
@@ -104,20 +101,5 @@ def cut_point_information_gain_numpy_fxp(X, y, cut_point):
     entropy_substract_result_fxp = Fxp(entropy_left_result_fxp + entropy_right_result_fxp).like(FIXEDFORMAT)
 
     gain_fxp = Fxp(entropy_full_fxp - entropy_substract_result_fxp).like(FIXEDFORMAT)
-    gain = gain_fxp.get_val() # TODO quit this conversion
-    return gain
-    #####################
-
-    # # TODO quitar conversion
-    # entropy_full = entropy_numpy(y)  # compute entropy of full dataset (w/o split)
-
-    #         # right_mask = X > cut_point# 
-    # # split data at cut_point
-    # data_left_mask = X <= cut_point #dataset[dataset[feature_label] <= cut_point]
-    # data_right_mask = X > cut_point #dataset[dataset[feature_label] > cut_point]
-    # (N, N_left, N_right) = (len(X), data_left_mask.sum(), data_right_mask.sum())
-
-    # gain = entropy_full - (N_left / N) * entropy_numpy(y[data_left_mask]) - \
-    #     (N_right / N) * entropy_numpy(y[data_right_mask])
-
-    # return gain
+  
+    return gain_fxp

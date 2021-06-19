@@ -102,6 +102,38 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :param partition_index: index of the sample (dataframe partition) in the interval of interest
         :return: True/False, whether to accept the partition
         '''
+        # #get dataframe only with desired attribute and class columns, and split by cut_point
+        # left_mask = X <= cut_point
+        # right_mask = X > cut_point
+
+        # #compute information gain obtained when splitting data at cut_point
+        # cut_point_gain = cut_point_information_gain_numpy(X, y, cut_point)
+        # #compute delta term in MDLPC criterion
+        # N = len(X) # number of examples in current partition
+        # partition_entropy = entropy_numpy(y)
+        # k = len(np.unique(y))
+        # k_left = len(np.unique(y[left_mask]))
+        # k_right = len(np.unique(y[right_mask]))
+        # entropy_left = entropy_numpy(y[left_mask])  # entropy of partition
+        # entropy_right = entropy_numpy(y[right_mask])
+        # delta = log(3 ** k, 2) - (k * partition_entropy) + (k_left * entropy_left) + (k_right * entropy_right)
+
+        # #to split or not to split
+        # gain_threshold = (log(N - 1, 2) + delta) / N
+
+        # if cut_point_gain > gain_threshold:
+        #     return True
+        # else:
+        #     return False
+
+    def MDLPC_criterion_fxp(self, X, y, feature_idx, cut_point):
+        '''
+        Determines whether a partition is accepted according to the MDLPC criterion
+        :param feature: feature of interest
+        :param cut_point: proposed cut_point
+        :param partition_index: index of the sample (dataframe partition) in the interval of interest
+        :return: True/False, whether to accept the partition
+        '''
         #get dataframe only with desired attribute and class columns, and split by cut_point
         left_mask = X <= cut_point
         right_mask = X > cut_point
@@ -199,20 +231,6 @@ class MDLP_Discretizer_fxp(TransformerMixin):
 
         return boundary_points_fxp
 
-    def compute_boundary_points_all_features(self):
-        '''
-        Computes all possible boundary points for each attribute in self._features (features to discretize)
-        :return:
-        '''
-        # def padded_cutpoints_array(arr, N):
-        #     cutpoints = self.feature_boundary_points(arr)
-        #     padding = np.array([np.nan] * (N - len(cutpoints)))
-        #     return np.concatenate([cutpoints, padding])
-
-        # boundaries = np.empty(self._data_raw.shape)
-        # boundaries[:, self._col_idx] = np.apply_along_axis(padded_cutpoints_array, 0, self._data_raw[:, self._col_idx], self._data_raw.shape[0])
-        # mask = np.all(np.isnan(boundaries), axis=1)
-        # return boundaries[~mask]
 
     def compute_boundary_points_all_features_fxp(self):
         '''
@@ -248,7 +266,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         # mask = np.logical_and((self._boundaries[:, feature_idx] > range_min), (self._boundaries[:, feature_idx] < range_max))
         # return np.unique(self._boundaries[:, feature_idx][mask])
 
-    def boundaries_in_partition_fxp(self, X, feature_idx):
+    def boundaries_in_partition_fxp(self, X_fxp, feature_idx):
         '''
         From the collection of all cut points for all features, find cut points that fall within a feature-partition's
         attribute-values' range
@@ -257,7 +275,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :return: points within feature's range
         '''
         # TODO convert to input
-        X_fxp = Fxp(X).like(FIXEDFORMAT)
+        
         range_min_fxp, range_max_fxp = (X_fxp.min(), X_fxp.max())
 
         # TODO quitar los temps, hacer mejor
@@ -268,81 +286,31 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         mask = np.logical_and((tmp_boundaries_fxp > range_min_fxp), (tmp_boundaries_fxp < range_max_fxp))
 
         if (mask.any() == True):
-            print("at least one is true")
+           # print("at least one is true")
             ret_unique_fxp = np.unique(tmp_boundaries_fxp[mask]).like(FIXEDFORMAT)
-            tmp_ret_unique_val = ret_unique_fxp.get_val() # TODO quitar
-            return tmp_ret_unique_val
+            return ret_unique_fxp
         else:
-            print("no one is true")
+            # print("no one is true")
             return np.array([])
         
-
-        
-        
-
-
-        range_min, range_max = (X.min(), X.max())
-        mask = np.logical_and((self._boundaries[:, feature_idx] > range_min), (self._boundaries[:, feature_idx] < range_max))
-        aaa = np.unique(self._boundaries[:, feature_idx][mask])
-        return np.unique(self._boundaries[:, feature_idx][mask])
-
-    def best_cut_point(self, X, y, feature_idx):
+    def best_cut_point_fxp(self, X_fxp, y, feature_idx):
         '''
         Selects the best cut point for a feature in a data partition based on information gain
         :param data: data partition (pandas dataframe)
         :param feature: target attribute
         :return: value of cut point with highest information gain (if many, picks first). None if no candidates
         '''
-        candidates = self.boundaries_in_partition_fxp(X, feature_idx=feature_idx)
-        if candidates.size == 0:
+        candidates_fxp = self.boundaries_in_partition_fxp(X_fxp, feature_idx=feature_idx)
+
+        if candidates_fxp.size == 0:
             return None
-        gains = [(cut, cut_point_information_gain_numpy_fxp(X, y, cut_point=cut)) for cut in candidates]
-        gains = sorted(gains, key=lambda x: x[1], reverse=True)
 
-        return gains[0][0] #return cut point
+        gain_fxp = [(cut, cut_point_information_gain_numpy_fxp(X_fxp, y, cut_point_fxp=cut)) for cut in candidates_fxp]
+        gain_fxp = sorted(gain_fxp, key=lambda x: x[1], reverse=True)
 
-    def single_feature_accepted_cutpoints(self, X, y, feature_idx):
-        '''
-        Computes the cuts for binning a feature according to the MDLP criterion
-        :param feature: attribute of interest
-        :param partition_index: index of examples in data partition for which cuts are required
-        :return: list of cuts for binning feature in partition covered by partition_index
-        '''
+        return gain_fxp[0][0] # return cut point
 
-        # # Delete missing data
-        # mask = np.isnan(X)
-        # X = X[~mask]
-        # y = y[~mask]
-
-        # #stop if constant or null feature values
-        # if len(np.unique(X)) < 2:
-        #     return
-        # #determine whether to cut and where
-        # cut_candidate = self.best_cut_point(X, y, feature_idx)
-        # if cut_candidate == None:
-        #     return
-        # decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate)
-
-        # # partition masks
-        # left_mask = X <= cut_candidate
-        # right_mask = X > cut_candidate
-
-        # #apply decision
-        # if not decision:
-        #     return  # if partition wasn't accepted, there's nothing else to do
-        # if decision:
-        #     #now we have two new partitions that need to be examined
-        #     left_partition = X[left_mask]
-        #     right_partition = X[right_mask]
-        #     if (left_partition.size == 0) or (right_partition.size == 0):
-        #         return #extreme point selected, don't partition
-        #     self._cuts[feature_idx] += [cut_candidate]  # accept partition
-        #     self.single_feature_accepted_cutpoints(left_partition, y[left_mask], feature_idx)
-        #     self.single_feature_accepted_cutpoints(right_partition, y[right_mask], feature_idx)
-        #     #order cutpoints in ascending order
-        #     self._cuts[feature_idx] = sorted(self._cuts[feature_idx])
-        #     return
-        
+       
     def single_feature_accepted_cutpoints_fxp(self, X, y, feature_idx):
         '''
         Computes the cuts for binning a feature according to the MDLP criterion
@@ -362,13 +330,17 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         if len(np.unique(X_fxp)) < 2:
             return
         #determine whether to cut and where
-        cut_candidate = self.best_cut_point(X, y, feature_idx)  # TODO
-        if cut_candidate == None:
+        cut_candidate_fxp = self.best_cut_point_fxp(X_fxp, y, feature_idx) 
+        if cut_candidate_fxp == None:
             return
-        decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate)  # TODO
 
-        # TODO should be the outputfrom the previous function
-        cut_candidate_fxp = Fxp(cut_candidate).like(FIXEDFORMAT)
+        cut_candidate = cut_candidate_fxp.get_val() # TODO remove conversion
+        print(cut_candidate) # TODO remove print
+        # decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate_fxp)  # TODO
+        decision = self.MDLPC_criterion_fxp(X, y, feature_idx, cut_candidate)  # TODO
+
+        # TODO should be the output from the previous function
+        #cut_candidate_fxp = Fxp(cut_candidate).like(FIXEDFORMAT)
 
         # partition masks
         left_mask = (X <= cut_candidate_fxp) == 1
