@@ -5,6 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Flask",
+            "type": "python",
+            "request": "launch",
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_ENV": "development"
+            },
+            "args": [
+                "run",
+                "--no-debugger"
+            ],
+            "jinja": true
+        },
+        {
             "name": "develop",
             "type": "python",
             "request": "launch",
@@ -18,5 +33,34 @@
             "program": "${workspaceFolder}\\test\\test_feature_boundary_points_fxp.py",
             "console": "integratedTerminal",
         },
+        {
+            "name": "load datasets",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\load_dataset.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test_profile",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_profiling_f32_vs_fpx.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "ML_example",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ML_pipeline_example.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "precission loss",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_precision_loss.py",
+            "console": "integratedTerminal",
+        },
+        
     ]
 }
