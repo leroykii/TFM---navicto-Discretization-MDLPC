@@ -1,7 +1,12 @@
 import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from MDLP_fxp import MDLP_Discretizer_fxp
+from MDLP.MDLP_fxp import MDLP_Discretizer_fxp
+
+# Interval cut-points 1: [5.55, 6.15]
+# Interval cut-points 2: [2.95, 3.3499999999999996]
+# Interval cut-points 3: [2.45, 4.75]
+# Interval cut-points 4: [0.8, 1.75]
 
 def main():
 

@@ -61,6 +61,12 @@
             "program": "${workspaceFolder}\\test\\other\\test_precision_loss.py",
             "console": "integratedTerminal",
         },
-        
+        {
+            "name": "compare to R",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_compare_to_R.py",
+            "console": "integratedTerminal",
+        },
     ]
 }

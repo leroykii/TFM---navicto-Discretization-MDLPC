@@ -5,7 +5,7 @@ import os, sys
 
 p = os.path.abspath('.')
 sys.path.insert(1, p)
-from MDLP import MDLP_Discretizer
+from MDLP.MDLP import MDLP_Discretizer
 
 def main():   
 

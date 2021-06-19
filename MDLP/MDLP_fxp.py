@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from fxpmath import Fxp
 
 
-FIXEDFORMAT = Fxp(None, signed=True, n_word=64, n_frac=32)    
+FIXEDFORMAT = Fxp(None, signed=True, n_word=16, n_frac=8)    
 
 
 def previous_item(a, val):
@@ -267,10 +267,18 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         tmp_boundaries_fxp = Fxp(tmp_boundaries_col[tmp]).like(FIXEDFORMAT)
         mask = np.logical_and((tmp_boundaries_fxp > range_min_fxp), (tmp_boundaries_fxp < range_max_fxp))
 
-        ret_unique_fxp = np.unique(tmp_boundaries_fxp[mask]).like(FIXEDFORMAT)
+        if (mask.any() == True):
+            print("at least one is true")
+            ret_unique_fxp = np.unique(tmp_boundaries_fxp[mask]).like(FIXEDFORMAT)
+            tmp_ret_unique_val = ret_unique_fxp.get_val() # TODO quitar
+            return tmp_ret_unique_val
+        else:
+            print("no one is true")
+            return np.array([])
+        
 
-        tmp_ret_unique_val = ret_unique_fxp.get_val() # TODO quitar
-        return tmp_ret_unique_val
+        
+        
 
 
         range_min, range_max = (X.min(), X.max())
