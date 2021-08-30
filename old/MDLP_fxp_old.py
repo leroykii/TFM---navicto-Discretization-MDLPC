@@ -10,13 +10,16 @@ from sklearn.model_selection import train_test_split
 from fxpmath import Fxp
 
 
+FIXEDFORMAT = Fxp(None, signed=True, n_word=12, n_frac=4)    
+
+
 def previous_item(a, val):
     idx = np.where(a == val)[0][0] - 1
     return a[idx]
 
 # TODO añadir a nombre _fxp
 class MDLP_Discretizer_fxp(TransformerMixin):
-    def __init__(self, features=None, raw_data_shape=None, n_word=64, n_frac=32):
+    def __init__(self, features=None, raw_data_shape=None):
         '''
         initializes discretizer object:
             saves raw copy of data and creates self._data with only features to discretize and class
@@ -33,9 +36,6 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         '''
         #Initialize descriptions of discretization bins
         self._bin_descriptions = {} # <class 'dict'>
-
-        #Save fixed format for use throughout the algorithm
-        self.fx_format = Fxp(None, signed=True, n_word=n_word, n_frac=n_frac)         
 
         #Create array with attr indices to discretize
         if features is None:  # Assume all columns are numeric and need to be discretized <class 'numpy.ndarray'>
@@ -91,7 +91,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         # else:
         #     discretized = X.copy()
         
-        X_fxp = Fxp(X).like(self.fx_format)
+        X_fxp = Fxp(X).like(FIXEDFORMAT)
 
         discretized = self.apply_cutpoints_fxp(X_fxp)
         return discretized
@@ -127,16 +127,16 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         entropy_right_fxp = entropy_numpy_fxp(y[right_mask])
         
         # Compute delta
-        entropy_left_and_right_fpx = Fxp((k_left * entropy_left_fxp) + (k_right * entropy_right_fxp)).like(self.fx_format)
-        entropy_all_contribution_fpx = Fxp( - (k * partition_entropy_fxp) + entropy_left_and_right_fpx).like(self.fx_format)
-        log_delta_fxp = Fxp(log(3 ** k, 2)).like(self.fx_format)   # TODO LOG PENDIENTE
-        delta = Fxp(log_delta_fxp + entropy_all_contribution_fpx).like(self.fx_format)
+        entropy_left_and_right_fpx = Fxp((k_left * entropy_left_fxp) + (k_right * entropy_right_fxp)).like(FIXEDFORMAT)
+        entropy_all_contribution_fpx = Fxp( - (k * partition_entropy_fxp) + entropy_left_and_right_fpx).like(FIXEDFORMAT)
+        log_delta_fxp = Fxp(log(3 ** k, 2)).like(FIXEDFORMAT)   # TODO LOG PENDIENTE
+        delta = Fxp(log_delta_fxp + entropy_all_contribution_fpx).like(FIXEDFORMAT)
 
         #to split or not to split
 
-        log_gain_threshold_fxp = Fxp(log(N - 1, 2)).like(self.fx_format)   # TODO LOG PENDIENTE
-        gain_threshold_sum = Fxp(log_gain_threshold_fxp + delta).like(self.fx_format)
-        gain_threshold_fxp = Fxp(gain_threshold_sum / N).like(self.fx_format)
+        log_gain_threshold_fxp = Fxp(log(N - 1, 2)).like(FIXEDFORMAT)   # TODO LOG PENDIENTE
+        gain_threshold_sum = Fxp(log_gain_threshold_fxp + delta).like(FIXEDFORMAT)
+        gain_threshold_fxp = Fxp(gain_threshold_sum / N).like(FIXEDFORMAT)
 
         if cut_point_gain_fxp > gain_threshold_fxp:
             return True
@@ -158,14 +158,14 @@ class MDLP_Discretizer_fxp(TransformerMixin):
             #sort data by values
             data_partition = data_partition[data_partition[:, 0].argsort()]
 
-        # class_labels_fxp = Fxp(self._class_labels).like(self.fx_format)
+        # class_labels_fxp = Fxp(self._class_labels).like(FIXEDFORMAT)
 
         # TODO: eliminar NaNs?
 
         # data_partition = np.concatenate([values_fxp[:, np.newaxis].get_val(), self._class_labels], axis=1)
-        # data_partition_fxp = Fxp(data_partition).like(self.fx_format)
+        # data_partition_fxp = Fxp(data_partition).like(FIXEDFORMAT)
         ############################# FXP operatoin
-        unique_vals_fxp = np.unique(values_fxp).like(self.fx_format) # each of this could be a bin boundary
+        unique_vals_fxp = np.unique(values_fxp).like(FIXEDFORMAT) # each of this could be a bin boundary
         
         boundaries_fxp_list = []
         for i in range(1, unique_vals_fxp.size):
@@ -179,11 +179,11 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         boundaries_offset_fxp_list = [previous_item(unique_vals_fxp, var) for var in boundaries_fxp_list]
 
         # Convert to Fxp Array
-        boundaries_offset_fxp = Fxp(np.array(boundaries_offset_fxp_list)).like(self.fx_format)
-        boundaries_fxp = Fxp(np.array(boundaries_fxp_list)).like(self.fx_format)
+        boundaries_offset_fxp = Fxp(np.array(boundaries_offset_fxp_list)).like(FIXEDFORMAT)
+        boundaries_fxp = Fxp(np.array(boundaries_fxp_list)).like(FIXEDFORMAT)
         
-        partial_sum = (boundaries_fxp + boundaries_offset_fxp).like(self.fx_format)
-        boundary_points_fxp =  (partial_sum / 2).like(self.fx_format)
+        partial_sum = (boundaries_fxp + boundaries_offset_fxp).like(FIXEDFORMAT)
+        boundary_points_fxp =  (partial_sum / 2).like(FIXEDFORMAT)
 
         return boundary_points_fxp
 
@@ -194,7 +194,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :return:
         '''
         def padded_cutpoints_array(arr, N):
-            cutpoints = self.feature_boundary_points_fxp(Fxp(arr).like(self.fx_format))
+            cutpoints = self.feature_boundary_points_fxp(Fxp(arr).like(FIXEDFORMAT))
             cutpoints = cutpoints.get_val()
             padding = np.array([np.nan] * (N - len(cutpoints)))
             return np.concatenate([cutpoints, padding])
@@ -225,12 +225,12 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         
         tmp_boundaries_col = self._boundaries[:, feature_idx]
         tmp = ~np.isnan(tmp_boundaries_col)
-        tmp_boundaries_fxp = Fxp(tmp_boundaries_col[tmp]).like(self.fx_format)
+        tmp_boundaries_fxp = Fxp(tmp_boundaries_col[tmp]).like(FIXEDFORMAT)
         mask = np.logical_and((tmp_boundaries_fxp > range_min_fxp), (tmp_boundaries_fxp < range_max_fxp))
 
         if (mask.any() == True):
            # print("at least one is true")
-            ret_unique_fxp = np.unique(tmp_boundaries_fxp[mask]).like(self.fx_format)
+            ret_unique_fxp = np.unique(tmp_boundaries_fxp[mask]).like(FIXEDFORMAT)
             return ret_unique_fxp
         else:
             # print("no one is true")
@@ -308,7 +308,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :return:
         '''
         for attr in self._col_idx:
-            X_fxp = Fxp(self._data_raw[:, attr]).like(self.fx_format)   # TODO remove conversion
+            X_fxp = Fxp(self._data_raw[:, attr]).like(FIXEDFORMAT)   # TODO remove conversion
             self.single_feature_accepted_cutpoints_fxp(X_fxp=X_fxp, y=self._class_labels, feature_idx=attr)
         return
 
@@ -364,14 +364,14 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         data = data_fxp.get_val()
         
         # Copy shape of data for the output vector
-        discretized = np.ones_like(data_fxp).like(self.fx_format) * -1
+        discretized = np.ones_like(data_fxp).like(FIXEDFORMAT) * -1
 
         for attr in self._col_idx:
             if len(self._cuts[attr]) == 0:
                 # data[:, attr] = 'All'
                 discretized[:, attr] = 0
             else:
-                cuts = [self.fx_format.lower] + self._cuts[attr] + [self.fx_format.upper]
+                cuts = [FIXEDFORMAT.lower] + self._cuts[attr] + [FIXEDFORMAT.upper]
                 discretized_col = np.digitize(x=data[:, attr], bins=cuts, right=False).astype('int') - 1   # TODO np.digitize
                 # discretized_col[np.isnan(data[:, attr])] = np.nan # TODO quité esto, si voy a soportar Nans, revisar
                 discretized[:, attr] = discretized_col

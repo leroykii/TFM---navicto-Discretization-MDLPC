@@ -3,7 +3,13 @@ from sklearn import datasets
 import numpy as np
 from fxpmath import Fxp
 
-FIXEDFORMAT = Fxp(None, signed=True, n_word=64, n_frac=32) 
+
+import os, sys
+
+p = os.path.abspath('.')
+sys.path.insert(1, p)
+from MDLP.MDLP_fxp_tmpcopy import MDLP_Discretizer_fxp
+
 
 
 # TODO añadir a nombre _fxp
@@ -25,8 +31,9 @@ def main():
 
     #Initialize discretizer object and fit to training data
     # discretizer = MDLP_Discretizer(features=numeric_features)
-    discretizer = test_pass_format(features=numeric_features)
  
+    discretizer = MDLP_Discretizer_fxp(features=numeric_features, n_word=32, n_frac=16)
+    
     exit(0)
 
 if __name__ == '__main__':
