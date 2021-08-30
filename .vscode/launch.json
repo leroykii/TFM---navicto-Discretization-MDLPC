@@ -110,5 +110,12 @@
             "program": "${workspaceFolder}\\test\\other\\test_passing_format_as_argument.py",
             "console": "integratedTerminal",
         },
+        {
+            "name": "test_scaler",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_scaler.py",
+            "console": "integratedTerminal",
+        },
     ]
 }

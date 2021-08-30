@@ -28,8 +28,7 @@ def main():
     #discretizer = MDLP_Discretizer_fxp(features=numeric_features)
     discretizer = MDLP_Discretizer_fxp(features=numeric_features, n_word=64, n_frac=32)
     #discretizer = MDLP_Discretizer(features=numeric_features)
-    # discretizer.fit(X_train, y_train)
-    discretizer.fit(X, y)
+    discretizer.fit(X_train, y_train)
     X_train_discretized = discretizer.transform(X_train)
 
     #apply same discretization to test set
