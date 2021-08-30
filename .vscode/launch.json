@@ -68,5 +68,47 @@
             "program": "${workspaceFolder}\\test\\other\\test_compare_to_R.py",
             "console": "integratedTerminal",
         },
+        {
+            "name": "test log table",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_log_table.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test pymrmr",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_pymrmr.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test panda conversion",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_convert_dataset_to_panda.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test naiveBayes",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_naivebayes.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test iris pipeline w NB and DT",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_irispipeline_w_NB_and_DT.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test_passing_format_as_argument",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_passing_format_as_argument.py",
+            "console": "integratedTerminal",
+        },
     ]
 }

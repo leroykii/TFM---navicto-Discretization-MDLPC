@@ -364,7 +364,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         data = data_fxp.get_val()
         
         # Copy shape of data for the output vector
-        discretized = np.ones_like(data_fxp) * -1
+        discretized = np.ones_like(data_fxp).like(FIXEDFORMAT) * -1
 
         for attr in self._col_idx:
             if len(self._cuts[attr]) == 0:

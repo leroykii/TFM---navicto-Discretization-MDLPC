@@ -75,7 +75,7 @@ def main():
     #########################
     ### Fixed point benchmark
     print()
-    print("### Fixed point benchmark Q16.16)")
+    print("### Fixed point benchmark Q32.16)")
 
     test_vector_a_fxp = Fxp(test_vector_a).like(FIXEDFORMAT)
     test_vector_b_fxp = Fxp(test_vector_b).like(FIXEDFORMAT)
