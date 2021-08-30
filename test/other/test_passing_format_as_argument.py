@@ -8,7 +8,7 @@ import os, sys
 
 p = os.path.abspath('.')
 sys.path.insert(1, p)
-from MDLP.MDLP_fxp_tmpcopy import MDLP_Discretizer_fxp
+from MDLP.MDLP_fxp import MDLP_Discretizer_fxp
 
 
 

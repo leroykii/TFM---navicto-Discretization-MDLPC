@@ -277,7 +277,8 @@ class MDLP_Discretizer_fxp(TransformerMixin):
             return
 
         cut_candidate = cut_candidate_fxp.get_val() # TODO remove conversion
-        print(cut_candidate) # TODO remove print
+        #print("cut_candidate") # TODO remove print
+        print("-cut-")
         # decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate_fxp)  # TODO
 
         decision = self.MDLPC_criterion_fxp(X_fxp, y, feature_idx, cut_candidate_fxp)  # TODO
@@ -308,6 +309,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :return:
         '''
         for attr in self._col_idx:
+            print("Feature index: ", attr)
             X_fxp = Fxp(self._data_raw[:, attr]).like(self.fx_format)   # TODO remove conversion
             self.single_feature_accepted_cutpoints_fxp(X_fxp=X_fxp, y=self._class_labels, feature_idx=attr)
         return

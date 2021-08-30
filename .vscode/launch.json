@@ -117,5 +117,12 @@
             "program": "${workspaceFolder}\\test\\other\\test_scaler.py",
             "console": "integratedTerminal",
         },
+        {
+            "name": "test_bins",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\test_bins.py",
+            "console": "integratedTerminal",
+        },
     ]
 }
