@@ -18,7 +18,37 @@ import load_dataset as ld
 ### Configuration ###
 
 fixedformat_pairs = [(4,2), (8, 4), (12, 8), (16, 8), (32, 16)]
-test_partition = .30
+test_partition = .99
+
+def scale_data(training_data, test_data):
+    
+    print("Scaling...")
+    scaler = StandardScaler()
+    training_data_scaled = scaler.fit_transform(training_data)
+
+    test_data_scaled = scaler.fit_transform(test_data)
+
+    return training_data_scaled, test_data_scaled
+
+def print_bin_results(n_cutpoints_found, total_bins, mean_bins_per_feature):
+
+    print("Number of cutpoints found: ", n_cutpoints_found)
+    print("Total bins: ", total_bins)
+    print("Mean bins per feature: ", mean_bins_per_feature)
+
+def process_cuts(discretizer):
+
+    n_cutpoints_found = len([l[0] for l in discretizer._cuts.values() if l])
+    total_bins = n_cutpoints_found + len(discretizer._cuts)
+    mean_bins_per_feature = total_bins / len(discretizer._cuts)
+
+    return n_cutpoints_found, total_bins, mean_bins_per_feature
+
+def save_metadata(output_filename, n_cutpoints_found, total_bins, mean_bins_per_feature, perf_time):
+
+    md_file = open(output_filename, "w")
+    md_file.write("cutpoints: " + str(n_cutpoints_found) + "\ntotalbins: " + str(total_bins) + "\nmeanbins: " + str(mean_bins_per_feature) + "\nperf: " + str(perf_time))
+    md_file.close()
 
 def pipeline(data, labels, datasetname):
     
@@ -27,10 +57,8 @@ def pipeline(data, labels, datasetname):
     
     print("Data shape: ", X_train.shape)
 
-    print("Scaling...")
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    
+    X_train_scaled, X_test_scaled = scale_data(X_train, X_test)
+
     n_features = np.arange(data.shape[1]) 
 
     print("\n\t##### Original MDLP #####")
@@ -53,20 +81,13 @@ def pipeline(data, labels, datasetname):
 
     t1_pstop = time.perf_counter()
     
-    n_cutpoints_found = len([l[0] for l in discretizer._cuts.values() if l])
-    total_bins = n_cutpoints_found + len(discretizer._cuts)
-    mean_bins_per_feature = total_bins / len(discretizer._cuts)
-
-    print("Number of cutpoints found: ", n_cutpoints_found)
-    print("Total bins: ", total_bins)
-    print("Mean bins per feature: ", mean_bins_per_feature)
+    n_cutpoints_found, total_bins, mean_bins_per_feature = process_cuts(discretizer)
+    print_bin_results(n_cutpoints_found, total_bins, mean_bins_per_feature)
+ 
     print("[PERF] Elapsed time during the whole program in seconds:", t1_pstop-t1_pstart)
 
-    output_filename = "output_files/" + datasetname[9:] + "_original_discretizer" + ".md";
-    md_file = open(output_filename, "w")
-
-    md_file.write("cutpoints: " + str(n_cutpoints_found) + "\ntotalbins: " + str(total_bins) + "\nmeanbins: " + str(mean_bins_per_feature) + "\nperf: " + str(t1_pstop-t1_pstart))
-    md_file.close()
+    output_filename = "output_files/" + datasetname[9:] + "_original_discretizer" + ".md"
+    save_metadata(output_filename, n_cutpoints_found, total_bins, mean_bins_per_feature, t1_pstop-t1_pstart)
 
     # fixedformat_n = np.shape(fixedformat_pairs)[0]
     for fx_pair in fixedformat_pairs:
@@ -76,10 +97,9 @@ def pipeline(data, labels, datasetname):
         n_word = fx_pair[0] 
         n_frac = fx_pair[1]
 
-        print("\n\t##### n_word: ", n_word, " - n_frac: ", n_frac, " #####")
-        
         discretizer = MDLP_Discretizer_fxp(features=n_features, n_word=n_word, n_frac=n_frac, debug=True)
 
+        print("\n\t##### n_word: ", n_word, " - n_frac: ", n_frac, " #####")
         print("Fitting discretizer...")
         discretizer.fit(X_train_scaled, y_train)
 
@@ -95,16 +115,11 @@ def pipeline(data, labels, datasetname):
         total_bins = n_cutpoints_found + len(discretizer._cuts)
         mean_bins_per_feature = total_bins / len(discretizer._cuts)
 
-        print("Number of cutpoints found: ", n_cutpoints_found)
-        print("Total bins: ", total_bins)
-        print("Mean bins per feature: ", mean_bins_per_feature)
+        print_bin_results(n_cutpoints_found, total_bins, mean_bins_per_feature)
         print("[PERF] Elapsed time during the whole program in seconds:", t1_pstop-t1_pstart)
 
         output_filename = "output_files/" + datasetname[9:] + "_discretizer_w" + str(n_word) + "_f" + str(n_frac) + ".md";
-        md_file = open(output_filename, "w")
-
-        md_file.write("cutpoints: " + str(n_cutpoints_found) + "\ntotalbins: " + str(total_bins) + "\nmeanbins: " + str(mean_bins_per_feature) + "\nperf: " + str(t1_pstop-t1_pstart))
-        md_file.close()
+        save_metadata(output_filename, n_cutpoints_found, total_bins, mean_bins_per_feature, t1_pstop-t1_pstart)
 
     # exit(0)
 
