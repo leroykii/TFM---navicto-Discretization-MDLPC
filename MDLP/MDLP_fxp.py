@@ -16,7 +16,7 @@ def previous_item(a, val):
 
 # TODO añadir a nombre _fxp
 class MDLP_Discretizer_fxp(TransformerMixin):
-    def __init__(self, features=None, raw_data_shape=None, n_word=64, n_frac=32):
+    def __init__(self, features=None, raw_data_shape=None, n_word=64, n_frac=32, debug=False):
         '''
         initializes discretizer object:
             saves raw copy of data and creates self._data with only features to discretize and class
@@ -36,6 +36,9 @@ class MDLP_Discretizer_fxp(TransformerMixin):
 
         #Save fixed format for use throughout the algorithm
         self.fx_format = Fxp(None, signed=True, n_word=n_word, n_frac=n_frac)         
+
+        #Save debug option (for console prints)
+        self.debug = debug
 
         #Create array with attr indices to discretize
         if features is None:  # Assume all columns are numeric and need to be discretized <class 'numpy.ndarray'>
@@ -278,7 +281,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
 
         cut_candidate = cut_candidate_fxp.get_val() # TODO remove conversion
         #print("cut_candidate") # TODO remove print
-        print("-cut-")
+        if (self.debug): print("-cut-")
         # decision = self.MDLPC_criterion(X, y, feature_idx, cut_candidate_fxp)  # TODO
 
         decision = self.MDLPC_criterion_fxp(X_fxp, y, feature_idx, cut_candidate_fxp)  # TODO
@@ -309,7 +312,7 @@ class MDLP_Discretizer_fxp(TransformerMixin):
         :return:
         '''
         for attr in self._col_idx:
-            print("Feature index: ", attr)
+            if (self.debug): print("Feature index: ", attr)
             X_fxp = Fxp(self._data_raw[:, attr]).like(self.fx_format)   # TODO remove conversion
             self.single_feature_accepted_cutpoints_fxp(X_fxp=X_fxp, y=self._class_labels, feature_idx=attr)
         return

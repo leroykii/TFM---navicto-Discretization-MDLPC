@@ -1,3 +1,4 @@
 *.pyc
 __pycache__/
 files/X_discretized.var
+output_files/
