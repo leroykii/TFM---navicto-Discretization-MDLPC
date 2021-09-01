@@ -124,5 +124,19 @@
             "program": "${workspaceFolder}\\test\\test_bins.py",
             "console": "integratedTerminal",
         },
+        {
+            "name": "test_ML",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\test_ML.py",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "test_codecarbon",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\test\\other\\test_codecarbon.py",
+            "console": "integratedTerminal",
+        },
     ]
 }

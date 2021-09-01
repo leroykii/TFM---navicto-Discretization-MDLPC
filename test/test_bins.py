@@ -6,6 +6,10 @@ from sklearn.naive_bayes import GaussianNB
 import time 
 import pickle
 
+
+from codecarbon import EmissionsTracker
+
+
 import os, sys
 
 p = os.path.abspath('.')
@@ -17,8 +21,8 @@ import load_dataset as ld
 
 ### Configuration ###
 
-fixedformat_pairs = [(4,2), (8, 4), (12, 8), (16, 8), (32, 16)]
-test_partition = .99
+fixedformat_pairs = [(32, 16)]
+test_partition = .3
 
 def scale_data(training_data, test_data):
     
@@ -50,7 +54,7 @@ def save_metadata(output_filename, n_cutpoints_found, total_bins, mean_bins_per_
     md_file.write("cutpoints: " + str(n_cutpoints_found) + "\ntotalbins: " + str(total_bins) + "\nmeanbins: " + str(mean_bins_per_feature) + "\nperf: " + str(perf_time))
     md_file.close()
 
-def pipeline(data, labels, datasetname):
+def test_bins(data, labels, datasetname):
     
     # Split between training and test
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_partition, random_state = 123)
@@ -69,8 +73,15 @@ def pipeline(data, labels, datasetname):
     # discretizer = MDLP_Discretizer_fxp(features=n_features, n_word=64, n_frac=32)
     discretizer = MDLP_Discretizer(features=n_features)
     
+    tracker = EmissionsTracker()
+    tracker.start()
+
     discretizer.fit(X_train_scaled, y_train)
     #print ("Interval cut-points: %s" % str(discretizer._cuts))
+
+    emissions: float = tracker.stop()
+    print(f"Emissions: {emissions} kg")
+
 
     with open("output_files/" + datasetname[9:] + "_discretizer_original" +".bin", 'wb') as file_to_save:
         pickle.dump(discretizer, file_to_save)
@@ -101,7 +112,16 @@ def pipeline(data, labels, datasetname):
 
         print("\n\t##### n_word: ", n_word, " - n_frac: ", n_frac, " #####")
         print("Fitting discretizer...")
+
+        tracker = EmissionsTracker()
+        tracker.start()
+
         discretizer.fit(X_train_scaled, y_train)
+        #print ("Interval cut-points: %s" % str(discretizer._cuts))
+
+        emissions: float = tracker.stop()
+        print(f"Emissions: {emissions} kg")
+     
 
         with open("output_files/" + datasetname[9:] + "_discretizer_w" + str(n_word) + "_f" + str(n_frac) +".bin", 'wb') as file_to_save:
             pickle.dump(discretizer, file_to_save)
@@ -143,8 +163,9 @@ def pipeline(data, labels, datasetname):
 
 def main():
 
-    datasets_filenames = ["datasets/bc-wisc-diag.mat", "datasets/madelon.mat", "datasets/colon.mat", "datasets/leukemia1.mat", "datasets/TOX_171.mat"]
-    
+    # datasets_filenames = ["datasets/bc-wisc-diag.mat", "datasets/madelon.mat", "datasets/colon.mat", "datasets/leukemia1.mat", "datasets/TOX_171.mat"]
+    datasets_filenames = ["datasets/colon.mat", "datasets/leukemia1.mat", "datasets/TOX_171.mat"]
+
     for df in datasets_filenames:
 
         print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
@@ -154,7 +175,7 @@ def main():
         data, labels = ld.load_dataset(df)
         print("Data shape: ", data.shape)
 
-        pipeline(data, labels, df)
+        test_bins(data, labels, df)
     
 
 
